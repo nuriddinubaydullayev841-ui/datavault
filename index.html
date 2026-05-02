@@ -1,489 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>DataVault — Save WiFi. Use Anywhere.</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --green:#1a9e6e;
-  --green-light:#e8f7f1;
-  --green-dark:#0d6e4a;
-  --ink:#0e1a14;
-  --ink-2:#2d3d35;
-  --ink-3:#5a6e64;
-  --paper:#f5f2eb;
-  --paper-2:#ede9df;
-  --paper-3:#e2ddd2;
-  --accent:#d4552a;
-  --mono:#DM Mono,monospace;
-}
-html{scroll-behavior:smooth}
-body{background:var(--paper);color:var(--ink);font-family:'Instrument Sans',sans-serif;overflow-x:hidden}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataVault - Secure Storage</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00FF00">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
 
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,242,235,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--paper-3)}
-.nav-logo{font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink);letter-spacing:-0.3px}
-.nav-logo em{color:var(--green);font-style:normal}
-.nav-links{display:flex;gap:32px;list-style:none}
-.nav-links a{font-size:14px;color:var(--ink-3);text-decoration:none;transition:color 0.2s}
-.nav-links a:hover{color:var(--ink)}
-.nav-cta{background:var(--ink);color:var(--paper);padding:9px 20px;border-radius:6px;font-size:14px;text-decoration:none;font-weight:500;transition:background 0.2s}
-.nav-cta:hover{background:var(--green-dark)}
-
-/* HERO */
-.hero{min-height:100vh;display:flex;align-items:center;padding:120px 48px 80px;position:relative;overflow:hidden}
-.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--paper-3) 1px,transparent 1px),linear-gradient(90deg,var(--paper-3) 1px,transparent 1px);background-size:48px 48px;opacity:0.6}
-.hero-content{position:relative;max-width:680px}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--green-light);border:1px solid #a8dcc8;padding:6px 14px;border-radius:99px;font-size:12px;color:var(--green-dark);font-family:'DM Mono',monospace;margin-bottom:28px;animation:fadeUp 0.6s ease both}
-.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-h1{font-family:'DM Serif Display',serif;font-size:clamp(48px,6vw,80px);line-height:1.05;letter-spacing:-2px;color:var(--ink);margin-bottom:24px;animation:fadeUp 0.6s 0.1s ease both}
-h1 em{color:var(--green);font-style:italic}
-.hero-sub{font-size:18px;color:var(--ink-3);line-height:1.7;max-width:520px;margin-bottom:40px;animation:fadeUp 0.6s 0.2s ease both}
-.hero-actions{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp 0.6s 0.3s ease both}
-.btn-primary{background:var(--ink);color:var(--paper);padding:14px 28px;border-radius:8px;font-size:15px;text-decoration:none;font-weight:500;transition:all 0.2s;border:none;cursor:pointer}
-.btn-primary:hover{background:var(--green-dark);transform:translateY(-1px)}
-.btn-secondary{background:transparent;color:var(--ink);padding:14px 28px;border-radius:8px;font-size:15px;text-decoration:none;font-weight:500;border:1.5px solid var(--paper-3);transition:all 0.2s}
-.btn-secondary:hover{border-color:var(--ink-3);transform:translateY(-1px)}
-.hero-visual{position:absolute;right:48px;top:50%;transform:translateY(-50%);width:420px;animation:fadeLeft 0.8s 0.4s ease both;display:flex;flex-direction:column;gap:12px}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeLeft{from{opacity:0;transform:translateX(30px) translateY(-50%)}to{opacity:1;transform:translateX(0) translateY(-50%)}}
-
-/* MOCK CARD */
-.mock-card{background:#fff;border:1px solid var(--paper-3);border-radius:16px;padding:20px;box-shadow:0 4px 24px rgba(14,26,20,0.08)}
-.mock-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.mock-dot-r{width:10px;height:10px;border-radius:50%;background:#ff6058}
-.mock-dot-y{width:10px;height:10px;border-radius:50%;background:#ffbd2e}
-.mock-dot-g{width:10px;height:10px;border-radius:50%;background:#27c93f}
-.mock-title{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-3);margin-left:4px}
-.mock-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.mock-stat{background:var(--paper);border-radius:10px;padding:12px 14px}
-.mock-stat-label{font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-family:'DM Mono',monospace}
-.mock-stat-val{font-size:20px;font-weight:600;color:var(--ink)}
-.mock-stat-sub{font-size:10px;color:var(--ink-3);margin-top:2px}
-.mock-bar-wrap{margin-bottom:14px}
-.mock-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-bottom:6px;font-family:'DM Mono',monospace}
-.mock-bar{height:6px;background:var(--paper-2);border-radius:99px;overflow:hidden}
-.mock-bar-fill{height:100%;background:var(--green);border-radius:99px;width:0%;transition:width 1.5s ease 1s}
-.mock-site-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--paper);border-radius:8px;margin-bottom:6px}
-.mock-site-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
-.mock-site-name{font-size:12px;color:var(--ink);flex:1;font-family:'DM Mono',monospace}
-.mock-site-mb{font-size:11px;color:var(--ink-3)}
-.mock-site-badge{font-size:10px;padding:2px 8px;border-radius:99px;background:var(--green-light);color:var(--green-dark)}
-.mock-status{display:flex;align-items:center;gap:8px;padding:10px;background:var(--green-light);border-radius:8px;margin-top:4px}
-.mock-status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
-.mock-status-text{font-size:11px;color:var(--green-dark);font-family:'DM Mono',monospace}
-
-/* STATS */
-.stats{padding:60px 48px;border-top:1px solid var(--paper-3);border-bottom:1px solid var(--paper-3)}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--paper-3);border:1px solid var(--paper-3);border-radius:12px;overflow:hidden}
-.stat-item{background:var(--paper);padding:36px 40px;text-align:center}
-.stat-num{font-family:'DM Serif Display',serif;font-size:48px;color:var(--ink);letter-spacing:-2px}
-.stat-num em{color:var(--green);font-style:normal}
-.stat-desc{font-size:14px;color:var(--ink-3);margin-top:6px}
-
-/* HOW */
-.how{padding:100px 48px}
-.section-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--green-dark);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
-.section-title{font-family:'DM Serif Display',serif;font-size:clamp(32px,4vw,52px);line-height:1.1;letter-spacing:-1.5px;color:var(--ink);margin-bottom:60px;max-width:500px}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
-.step{position:relative}
-.step-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);letter-spacing:1px;margin-bottom:20px}
-.step-icon{width:48px;height:48px;border-radius:12px;margin-bottom:20px;display:flex;align-items:center;justify-content:center}
-.step-icon.green{background:var(--green-light)}
-.step-icon.ink{background:var(--ink)}
-.step-icon.accent{background:#fdeee8}
-.step-title{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:-0.3px}
-.step-desc{font-size:14px;color:var(--ink-3);line-height:1.7}
-.step-line{position:absolute;top:24px;right:-20px;width:40px;height:1px;background:var(--paper-3)}
-
-/* WHY */
-.why{padding:100px 48px;background:var(--ink);color:var(--paper)}
-.why .section-label{color:#4ade80}
-.why .section-title{color:var(--paper)}
-.why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-top:60px}
-.why-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px}
-.why-card-icon{font-size:28px;margin-bottom:16px}
-.why-card-title{font-size:17px;font-weight:600;margin-bottom:10px;color:var(--paper)}
-.why-card-desc{font-size:14px;color:rgba(245,242,235,0.6);line-height:1.7}
-.why-quote{margin-top:60px;padding:40px;background:rgba(255,255,255,0.04);border-left:3px solid var(--green);border-radius:0 12px 12px 0}
-.why-quote-text{font-family:'DM Serif Display',serif;font-size:22px;font-style:italic;color:var(--paper);line-height:1.5;margin-bottom:16px}
-.why-quote-author{font-size:13px;color:rgba(245,242,235,0.5);font-family:'DM Mono',monospace}
-
-/* DEMO SECTION */
-.demo-section{padding:100px 48px}
-.demo-inner{background:var(--paper-2);border:1px solid var(--paper-3);border-radius:20px;padding:60px;text-align:center}
-.demo-inner .section-title{max-width:100%;margin-bottom:16px}
-.demo-sub{font-size:16px;color:var(--ink-3);margin-bottom:40px}
-.demo-frame{background:#fff;border:1px solid var(--paper-3);border-radius:16px;padding:32px;max-width:640px;margin:0 auto 40px;text-align:left}
-
-/* WAITLIST */
-.waitlist{padding:100px 48px;text-align:center}
-.waitlist .section-title{max-width:100%;margin-bottom:16px}
-.waitlist-sub{font-size:16px;color:var(--ink-3);margin-bottom:40px}
-.waitlist-form{display:flex;gap:12px;max-width:420px;margin:0 auto;justify-content:center;flex-wrap:wrap}
-.waitlist-input{flex:1;min-width:200px;padding:14px 18px;border:1.5px solid var(--paper-3);border-radius:8px;font-size:15px;background:var(--paper);color:var(--ink);font-family:'Instrument Sans',sans-serif;outline:none;transition:border 0.2s}
-.waitlist-input:focus{border-color:var(--green)}
-.waitlist-btn{background:var(--green);color:#fff;padding:14px 24px;border-radius:8px;font-size:15px;border:none;cursor:pointer;font-weight:500;font-family:'Instrument Sans',sans-serif;transition:background 0.2s;white-space:nowrap}
-.waitlist-btn:hover{background:var(--green-dark)}
-.waitlist-note{font-size:13px;color:var(--ink-3);margin-top:14px;font-family:'DM Mono',monospace}
-.success-msg{display:none;font-size:15px;color:var(--green-dark);font-weight:500;margin-top:16px}
-
-/* FOOTER */
-footer{padding:40px 48px;border-top:1px solid var(--paper-3);display:flex;justify-content:space-between;align-items:center}
-.footer-logo{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink)}
-.footer-logo em{color:var(--green);font-style:normal}
-.footer-note{font-size:13px;color:var(--ink-3);font-family:'DM Mono',monospace}
-
-/* DEMO APP inside page */
-.dapp-status{display:flex;align-items:center;gap:8px;background:#f5f2eb;border:1px solid #e2ddd2;border-radius:8px;padding:9px 14px;margin-bottom:16px;font-size:13px}
-.dapp-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
-.dapp-dot.off{background:#e24b4a;animation:none}
-.dapp-status-text{flex:1;color:#5a6e64}
-.dapp-toggle{font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid #c0bdb5;background:#fff;cursor:pointer;color:var(--ink)}
-.dapp-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
-.dapp-card{background:#f5f2eb;border-radius:8px;padding:11px 13px}
-.dapp-card-label{font-size:10px;color:#5a6e64;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-family:'DM Mono',monospace}
-.dapp-card-val{font-size:19px;font-weight:600;color:var(--ink)}
-.dapp-card-sub{font-size:10px;color:#5a6e64;margin-top:1px}
-.dapp-bar-wrap{margin-bottom:14px}
-.dapp-bar-row{display:flex;justify-content:space-between;font-size:12px;color:#5a6e64;margin-bottom:5px;font-family:'DM Mono',monospace}
-.dapp-bar{height:7px;background:#e2ddd2;border-radius:99px;overflow:hidden}
-.dapp-bar-fill{height:100%;background:var(--green);border-radius:99px;transition:width 0.5s ease}
-.dapp-row{display:flex;gap:8px;margin-bottom:8px}
-.dapp-input{flex:1;padding:8px 12px;border:1px solid #e2ddd2;border-radius:6px;font-size:13px;background:#fff;color:var(--ink);font-family:'Instrument Sans',sans-serif;outline:none}
-.dapp-btn{padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500}
-.dapp-btn:disabled{opacity:0.4;cursor:not-allowed}
-.dapp-sites{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto}
-.dapp-site-item{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e2ddd2;border-radius:8px;padding:8px 12px}
-.dapp-site-name{flex:1;font-size:12px;font-weight:500;font-family:'DM Mono',monospace;color:var(--ink)}
-.dapp-site-mb{font-size:11px;color:#5a6e64}
-.dapp-site-badge{font-size:10px;padding:2px 8px;border-radius:99px;background:#e8f7f1;color:#0d6e4a}
-.dapp-empty{font-size:13px;color:#8a9e94;padding:4px 0;font-family:'DM Mono',monospace}
-.dapp-loading{font-size:12px;color:#8a9e94;display:none;font-family:'DM Mono',monospace;margin-bottom:6px}
-
-@media(max-width:900px){
-  .hero-visual{display:none}
-  .hero{padding:100px 24px 60px}
-  nav{padding:16px 24px}
-  .stats{padding:40px 24px}
-  .stats-grid{grid-template-columns:1fr}
-  .how{padding:60px 24px}
-  .steps{grid-template-columns:1fr}
-  .step-line{display:none}
-  .why{padding:60px 24px}
-  .why-grid{grid-template-columns:1fr}
-  .demo-section{padding:60px 24px}
-  .demo-inner{padding:32px 20px}
-  .waitlist{padding:60px 24px}
-  footer{padding:28px 24px;flex-direction:column;gap:12px;text-align:center}
-  .dapp-cards{grid-template-columns:1fr 1fr}
-}
-</style>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            border: 2px solid #00FF00;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px #00FF00;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        p { color: #888; }
+        #install-btn {
+            background: #00FF00;
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none; /* Faqat kerak bo'lganda chiqadi */
+        }
+        #connection-status {
+            position: fixed;
+            top: 10px;
+            font-size: 0.8rem;
+        }
+    </style>
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo">Data<em>Vault</em></div>
-  <ul class="nav-links">
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#demo">Live Demo</a></li>
-    <li><a href="#waitlist">Join waitlist</a></li>
-  </ul>
-  <a href="#waitlist" class="nav-cta">Get early access</a>
-</nav>
+    <div id="connection-status">Tekshirilmoqda...</div>
 
-<section class="hero">
-  <div class="hero-grid"></div>
-  <div class="hero-content">
-    <div class="hero-badge">
-      <span class="hero-badge-dot"></span>
-      Now in beta — free to try
+    <div class="container">
+        <img src="/icon-192x192.png" alt="Logo" style="width: 80px; margin-bottom: 15px;">
+        <h1>DataVault</h1>
+        <p>Xavfsiz va Oflayn Ma'lumotlar Ombori</p>
+        
+        <button id="install-btn">ILOVANI O'RNATISH</button>
     </div>
-    <h1>Save WiFi.<br><em>Use anywhere.</em></h1>
-    <p class="hero-sub">DataVault collects your mobile data while on WiFi — and lets you spend it anywhere, even without a signal.</p>
-    <div class="hero-actions">
-      <a href="#demo" class="btn-primary">Try the demo</a>
-      <a href="#how" class="btn-secondary">See how it works</a>
+
+    <div id="update-banner" hidden style="position:fixed; bottom:0; background:#111; width:100%; padding:15px; text-align:center; border-top:1px solid #00FF00;">
+        Yangi versiya tayyor! <button id="update-btn" style="background:#00FF00; border:none; padding:5px 15px; border-radius:5px;">Yangilash</button>
     </div>
-  </div>
-  <div class="hero-visual">
-    <div class="mock-card">
-      <div class="mock-header">
-        <div class="mock-dot-r"></div><div class="mock-dot-y"></div><div class="mock-dot-g"></div>
-        <span class="mock-title">DataVault — connected</span>
-      </div>
-      <div class="mock-stat-row">
-        <div class="mock-stat">
-          <div class="mock-stat-label">Saved</div>
-          <div class="mock-stat-val" id="heroMB">0 MB</div>
-          <div class="mock-stat-sub">of 300 MB</div>
-        </div>
-        <div class="mock-stat">
-          <div class="mock-stat-label">Expires in</div>
-          <div class="mock-stat-val">24h</div>
-          <div class="mock-stat-sub">after collection</div>
-        </div>
-      </div>
-      <div class="mock-bar-wrap">
-        <div class="mock-bar-label"><span>Storage used</span><span id="heroPct">0%</span></div>
-        <div class="mock-bar"><div class="mock-bar-fill" id="heroBar"></div></div>
-      </div>
-      <div class="mock-site-row"><div class="mock-site-dot"></div><span class="mock-site-name">youtube.com</span><span class="mock-site-mb">18.0 MB</span><span class="mock-site-badge">active</span></div>
-      <div class="mock-site-row"><div class="mock-site-dot"></div><span class="mock-site-name">kun.uz</span><span class="mock-site-mb">3.2 MB</span><span class="mock-site-badge">active</span></div>
-      <div class="mock-site-row"><div class="mock-site-dot"></div><span class="mock-site-name">daryo.uz</span><span class="mock-site-mb">2.8 MB</span><span class="mock-site-badge">active</span></div>
-      <div class="mock-status"><div class="mock-status-dot"></div><span class="mock-status-text">WiFi connected — collecting in background</span></div>
-    </div>
-  </div>
-</section>
 
-<section class="stats">
-  <div class="stats-grid">
-    <div class="stat-item">
-      <div class="stat-num">300<em>MB</em></div>
-      <div class="stat-desc">Collected per session on WiFi</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">24<em>h</em></div>
-      <div class="stat-desc">Use your saved data anywhere</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">0<em>$</em></div>
-      <div class="stat-desc">Free during beta — always</div>
-    </div>
-  </div>
-</section>
+    <script src="/app.js" defer></script>
 
-<section class="how" id="how">
-  <div class="section-label">How it works</div>
-  <div class="section-title">Three steps. No setup.</div>
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">01 —</div>
-      <div class="step-icon green">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 12.5C5 8.36 8.36 5 12.5 5S20 8.36 20 12.5" stroke="#1a9e6e" stroke-width="2" stroke-linecap="round"/><path d="M8 12.5C8 10.01 10.01 8 12.5 8S17 10.01 17 12.5" stroke="#1a9e6e" stroke-width="2" stroke-linecap="round"/><circle cx="12.5" cy="12.5" r="1.5" fill="#1a9e6e"/></svg>
-      </div>
-      <div class="step-title">Connect to WiFi</div>
-      <div class="step-desc">Open DataVault when you're on any WiFi network — at home, a café, your university. The app begins collecting data silently in the background.</div>
-      <div class="step-line"></div>
-    </div>
-    <div class="step">
-      <div class="step-num">02 —</div>
-      <div class="step-icon ink">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3v11M12 14l-4-4M12 14l4-4" stroke="#f5f2eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 18h14" stroke="#f5f2eb" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <div class="step-title">Data gets saved</div>
-      <div class="step-desc">Up to 300 MB is stored locally on your device. Browse sites, cache content — it all counts. Your vault fills up automatically.</div>
-      <div class="step-line"></div>
-    </div>
-    <div class="step">
-      <div class="step-num">03 —</div>
-      <div class="step-icon accent">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="3" stroke="#d4552a" stroke-width="2"/><path d="M9 8h6M9 12h6M9 16h4" stroke="#d4552a" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <div class="step-title">Use it offline</div>
-      <div class="step-desc">No signal? Low bars? Doesn't matter. Your 300 MB vault works for 24 hours — stream, browse, and load pages like you're still connected.</div>
-    </div>
-  </div>
-</section>
-
-<section class="why" id="why">
-  <div class="section-label">Why DataVault</div>
-  <div class="section-title" style="color:var(--paper)">Built from a real problem.</div>
-  <div class="why-grid">
-    <div class="why-card">
-      <div class="why-card-icon">📡</div>
-      <div class="why-card-title">Data is expensive</div>
-      <div class="why-card-desc">In Uzbekistan and most of Central Asia, mobile data costs 3–5× more per GB than Western Europe. Every megabyte matters.</div>
-    </div>
-    <div class="why-card">
-      <div class="why-card-icon">🎮</div>
-      <div class="why-card-title">WiFi isn't always available</div>
-      <div class="why-card-desc">You have WiFi at home or in a café — but not on the bus, at school, or in the street. DataVault bridges that gap.</div>
-    </div>
-    <div class="why-card">
-      <div class="why-card-icon">⚡</div>
-      <div class="why-card-title">Zero extra steps</div>
-      <div class="why-card-desc">No manual downloads, no content selection. Just connect to WiFi and DataVault handles the rest — completely in the background.</div>
-    </div>
-    <div class="why-card">
-      <div class="why-card-icon">🔒</div>
-      <div class="why-card-title">Stored on your device</div>
-      <div class="why-card-desc">Your data never leaves your phone. No cloud, no accounts required for the basic version. Private by design.</div>
-    </div>
-  </div>
-  <div class="why-quote">
-    <div class="why-quote-text">"When I was a kid, my mobile data would run out right before I could download a game. I made a wish — I wish there was an app that saves WiFi for later. DataVault is that app."</div>
-    <div class="why-quote-author">— Founder, DataVault</div>
-  </div>
-</section>
-
-<section class="demo-section" id="demo">
-  <div class="demo-inner">
-    <div class="section-label" style="text-align:center">Live demo</div>
-    <div class="section-title" style="text-align:center;max-width:100%">Try it right now.</div>
-    <p class="demo-sub">Add a site, collect MB on "WiFi", then switch to offline — and watch it still work.</p>
-
-    <div class="demo-frame">
-      <div class="dapp-status">
-        <div class="dapp-dot" id="dDot"></div>
-        <span class="dapp-status-text" id="dStatusText">WiFi connected — collecting in background</span>
-        <button class="dapp-toggle" onclick="dToggle()">Go offline</button>
-      </div>
-      <div class="dapp-cards">
-        <div class="dapp-card">
-          <div class="dapp-card-label">Saved</div>
-          <div class="dapp-card-val"><span id="dMB">0.0</span> MB</div>
-          <div class="dapp-card-sub">of 300 MB</div>
-        </div>
-        <div class="dapp-card">
-          <div class="dapp-card-label">Expires</div>
-          <div class="dapp-card-val" id="dTimer">24:00</div>
-          <div class="dapp-card-sub">h : min</div>
-        </div>
-        <div class="dapp-card">
-          <div class="dapp-card-label">Sites</div>
-          <div class="dapp-card-val" id="dSites">0</div>
-          <div class="dapp-card-sub">cached</div>
-        </div>
-      </div>
-      <div class="dapp-bar-wrap">
-        <div class="dapp-bar-row"><span>Vault capacity</span><span id="dPct">0%</span></div>
-        <div class="dapp-bar"><div class="dapp-bar-fill" id="dBar" style="width:0%"></div></div>
-      </div>
-      <div class="dapp-row">
-        <input class="dapp-input" id="dInput" type="text" placeholder="Enter a site: kun.uz, youtube.com ..."/>
-        <button class="dapp-btn" id="dBtn" onclick="dCache()">Cache</button>
-      </div>
-      <div class="dapp-loading" id="dLoading">Fetching and caching...</div>
-      <div class="dapp-sites" id="dList"><div class="dapp-empty">No sites cached yet.</div></div>
-    </div>
-    <a href="#waitlist" class="btn-primary">Get the full app →</a>
-  </div>
-</section>
-
-<section class="waitlist" id="waitlist">
-  <div class="section-label">Early access</div>
-  <div class="section-title">Be the first to know.</div>
-  <p class="waitlist-sub">DataVault is in active development. Drop your email and we'll reach out when the Android app is ready.</p>
-  <div class="waitlist-form">
-    <input class="waitlist-input" id="emailInput" type="email" placeholder="your@email.com"/>
-    <button class="waitlist-btn" onclick="joinWaitlist()">Join waitlist</button>
-  </div>
-  <div class="waitlist-note">No spam. Just one email when we launch.</div>
-  <div class="success-msg" id="successMsg">You're on the list! We'll be in touch soon.</div>
-</section>
-
-<footer>
-  <div class="footer-logo">Data<em>Vault</em></div>
-  <div class="footer-note">© 2025 DataVault — Built in Uzbekistan</div>
-</footer>
-
-<script>
-// Hero mock animation
-setTimeout(()=>{
-  document.querySelector('.mock-bar-fill').style.width='80%';
-  document.getElementById('heroBar').style.width='80%';
-  document.getElementById('heroPct').textContent='80%';
-  document.getElementById('heroMB').textContent='240 MB';
-},300);
-
-// Demo app
-let dOnline=true,dCollected=0,dSites=[],dSeconds=86400,dTimerStarted=false,dBgInt=null;
-const dMaxMB=300;
-const dSizesMap={'youtube.com':18,'kun.uz':3.2,'daryo.uz':2.8,'gazeta.uz':2.1,'instagram.com':8.5,'facebook.com':6.3,'wikipedia.org':1.8,'spotify.com':7.4,'google.com':1.1};
-function dGetSize(u){for(const k in dSizesMap){if(u.includes(k))return dSizesMap[k];}return+(Math.random()*4+1.5).toFixed(1);}
-
-function dToggle(){
-  dOnline=!dOnline;
-  const dot=document.getElementById('dDot');
-  const txt=document.getElementById('dStatusText');
-  const btn=document.querySelector('.dapp-toggle');
-  const cBtn=document.getElementById('dBtn');
-  if(dOnline){
-    dot.classList.remove('off');
-    txt.textContent='WiFi connected — collecting in background';
-    btn.textContent='Go offline';
-    cBtn.disabled=false;
-    dStartBg();
-  } else {
-    dot.classList.add('off');
-    txt.textContent='Offline — spending saved data';
-    btn.textContent='Go online';
-    cBtn.disabled=true;
-    clearInterval(dBgInt);dBgInt=null;
-  }
-}
-
-function dStartBg(){
-  if(dBgInt)return;
-  dBgInt=setInterval(()=>{
-    if(!dOnline)return;
-    const add=+(Math.random()*0.4+0.1).toFixed(1);
-    if(dCollected+add<=dMaxMB){dCollected=+((dCollected+add).toFixed(1));dUpdateUI();}
-  },2500);
-}
-
-function dCache(){
-  if(!dOnline)return;
-  const inp=document.getElementById('dInput');
-  let url=inp.value.trim();
-  if(!url)return;
-  if(!url.startsWith('http'))url='https://'+url;
-  const domain=url.replace(/https?:\/\//,'').split('/')[0];
-  const size=dGetSize(domain);
-  if(dCollected+size>dMaxMB){alert('Demo limit reached! Full app has no cap.');return;}
-  const ld=document.getElementById('dLoading');
-  const btn=document.getElementById('dBtn');
-  btn.disabled=true;ld.style.display='block';
-  setTimeout(()=>{
-    dCollected=+((dCollected+size).toFixed(1));
-    dSites.push({name:domain,size,time:new Date()});
-    if(!dTimerStarted)dStartTimer();
-    dUpdateUI();
-    inp.value='';btn.disabled=false;ld.style.display='none';
-  },1300);
-}
-
-function dStartTimer(){
-  dTimerStarted=true;
-  setInterval(()=>{
-    if(dSeconds>0)dSeconds--;
-    const h=Math.floor(dSeconds/3600);
-    const m=Math.floor((dSeconds%3600)/60);
-    document.getElementById('dTimer').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-  },1000);
-}
-
-function dUpdateUI(){
-  const pct=Math.round((dCollected/dMaxMB)*100);
-  document.getElementById('dMB').textContent=dCollected.toFixed(1);
-  document.getElementById('dPct').textContent=pct+'%';
-  document.getElementById('dBar').style.width=pct+'%';
-  document.getElementById('dBar').style.background=pct>80?'#e24b4a':pct>50?'#ba7517':'#1a9e6e';
-  document.getElementById('dSites').textContent=dSites.length;
-  const list=document.getElementById('dList');
-  if(!dSites.length){list.innerHTML='<div class="dapp-empty">No sites cached yet.</div>';return;}
-  list.innerHTML=[...dSites].reverse().map(s=>`
-    <div class="dapp-site-item">
-      <span class="dapp-site-name">${s.name}</span>
-      <span class="dapp-site-mb">${s.size} MB</span>
-      <span class="dapp-site-badge">active</span>
-    </div>`).join('');
-}
-
-function joinWaitlist(){
-  const email=document.getElementById('emailInput').value.trim();
-  if(!email||!email.includes('@')){alert('Please enter a valid email.');return;}
-  document.getElementById('emailInput').value='';
-  document.querySelector('.waitlist-form').style.display='none';
-  document.getElementById('successMsg').style.display='block';
-}
-
-dStartBg();
-</script>
 </body>
 </html>
