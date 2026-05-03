@@ -1,1 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Your personal offline-first knowledge vault. Cache any webpage and access it without internet." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>DataVault</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192x192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #00ff88;
+      --green-dim: #00cc6a;
+      --green-glow: rgba(0, 255, 136, 0.15);
+      --green-glow-strong: rgba(0, 255, 136, 0.35);
+      --bg: #000000;
+      --bg2: #0a0a0a;
+      --bg3: #111111;
+      --border: rgba(0, 255, 136, 0.2);
+      --text: #e8e8e8;
+      --text-dim: #666;
+      --red: #ff4466;
+      --yellow: #ffcc00;
+    }
 
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Scanline overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,255,136,0.015) 2px,
+        rgba(0,255,136,0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px var(--green-glow-strong);
+      animation: pulse-border 3s infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 12px var(--green-glow-strong); }
+      50% { box-shadow: 0 0 24px var(--green-glow-strong), 0 0 48px var(--green-glow); }
+    }
+
+    .logo-icon svg { width: 20px; height: 20px; }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--green);
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px var(--green-glow-strong);
+    }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    #status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid;
+      transition: all 0.3s;
+    }
+
+    #status-badge.online {
+      color: var(--green);
+      border-color: var(--green);
+      background: var(--green-glow);
+    }
+
+    #status-badge.offline {
+      color: var(--red);
+      border-color: var(--red);
+      background: rgba(255,68,102,0.1);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    #install-btn {
+      display: none;
+      background: var(--green);
+      color: #000;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px 16px 120px;
+    }
+
+    /* ── Fetch Section ── */
+    .fetch-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fetch-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at center, var(--green-glow) 0%, transparent 60%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .fetch-card:focus-within::before { opacity: 1; }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      opacity: 0.8;
+    }
+
+    .url-input-wrap {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    #url-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    #url-input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-glow);
+    }
+
+    #url-input::placeholder { color: var(--text-dim); }
+
+    #fetch-btn {
+      background: var(--green);
+      color: #000;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px var(--green-glow-strong);
+      letter-spacing: 1px;
+    }
+
+    #fetch-btn:active { transform: scale(0.96); }
+    #fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #fetch-btn.loading {
+      background: var(--bg3);
+      color: var(--green);
+      border: 1px solid var(--green);
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .quick-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+    }
+
+    .quick-tag:active {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-glow);
+    }
+
+    /* ── Progress bar ── */
+    #progress-wrap {
+      display: none;
+      margin-top: 14px;
+    }
+
+    #progress-wrap.show { display: block; }
+
+    .progress-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--green);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--green);
+      transition: width 0.3s;
+      width: 0%;
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 22px;
+      color: var(--green);
+      text-shadow: 0 0 20px var(--green-glow-strong);
+      display: block;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── Archives list ── */
+    .archives-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .archives-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+
+    .clear-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--red);
+      background: none;
+      border: 1px solid rgba(255,68,102,0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #search-input {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color 0.3s;
+    }
+
+    #search-input:focus { border-color: var(--green); }
+    #search-input::placeholder { color: var(--text-dim); }
+
+    #archives-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .archive-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .archive-card:active {
+      border-color: var(--green);
+      background: var(--bg3);
+      transform: scale(0.99);
+    }
+
+    .archive-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .archive-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .archive-status {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .status-ready {
+      background: var(--green-glow);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .status-pending {
+      background: rgba(255,204,0,0.1);
+      color: var(--yellow);
+      border: 1px solid rgba(255,204,0,0.3);
+    }
+
+    .status-failed {
+      background: rgba(255,68,102,0.1);
+      color: var(--red);
+      border: 1px solid rgba(255,68,102,0.3);
+    }
+
+    .archive-url {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 10px;
+    }
+
+    .archive-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .archive-tags { display: flex; gap: 6px; }
+
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    .archive-time {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    .archive-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text-dim);
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .action-btn.primary {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-glow);
+    }
+
+    .action-btn.danger {
+      border-color: rgba(255,68,102,0.3);
+      color: var(--red);
+    }
+
+    /* ── Empty state ── */
+    #empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .empty-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      opacity: 0.6;
+      line-height: 1.6;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg2);
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s;
+      white-space: nowrap;
+      box-shadow: 0 0 20px var(--green-glow);
+      pointer-events: none;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.error {
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: 0 0 20px rgba(255,68,102,0.2);
+    }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: none;
+    }
+
+    .nav-icon { font-size: 20px; line-height: 1; }
+
+    .nav-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    .nav-item.active .nav-label { color: var(--green); }
+    .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px var(--green)); }
+
+    /* ── Detail view ── */
+    #detail-view {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      overflow-y: auto;
+    }
+
+    #detail-view.show { display: block; }
+
+    .detail-header {
+      position: sticky;
+      top: 0;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .detail-title {
+      font-size: 15px;
+      font-weight: 600;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .detail-body { padding: 20px; }
+
+    .detail-url {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--green);
+      word-break: break-all;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .detail-content {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .detail-action {
+      flex: 1;
+      padding: 14px;
+      border-radius: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      border: none;
+      letter-spacing: 1px;
+    }
+
+    .detail-action.primary {
+      background: var(--green);
+      color: #000;
+      box-shadow: 0 0 20px var(--green-glow-strong);
+    }
+
+    .detail-action.secondary {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Settings view ── */
+    #settings-view {
+      display: none;
+    }
+
+    #settings-view.show { display: block; }
+
+    .settings-section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .settings-item {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .settings-item:last-child { border-bottom: none; }
+
+    .settings-label { font-size: 13px; font-weight: 600; }
+    .settings-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: var(--bg3);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .toggle.on {
+      background: var(--green-glow);
+      border-color: var(--green);
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .toggle.on::after {
+      left: 22px;
+      background: var(--green);
+    }
+
+    /* Animations */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--green);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <span class="logo-text">DATAVAULT</span>
+  </div>
+  <div class="header-right">
+    <div id="status-badge" class="online">
+      <div class="status-dot"></div>
+      <span id="status-text">ONLINE</span>
+    </div>
+    <button id="install-btn" onclick="handleInstall()">+ INSTALL</button>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main id="main-view">
+
+  <!-- Fetch Card -->
+  <div class="fetch-card">
+    <div class="section-label">⚡ Cache a webpage</div>
+    <div class="url-input-wrap">
+      <input
+        id="url-input"
+        type="url"
+        placeholder="https://example.com/article"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button id="fetch-btn" onclick="handleFetch()">SAVE</button>
+    </div>
+    <div class="quick-tags">
+      <button class="quick-tag" onclick="setUrl('https://wikipedia.org')">Wikipedia</button>
+      <button class="quick-tag" onclick="setUrl('https://developer.mozilla.org')">MDN Docs</button>
+      <button class="quick-tag" onclick="setUrl('https://arxiv.org')">ArXiv</button>
+      <button class="quick-tag" onclick="setUrl('https://medium.com')">Medium</button>
+    </div>
+    <div id="progress-wrap">
+      <div class="progress-label">
+        <span id="progress-text">Fetching content...</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-num" id="stat-count">0</span>
+      <span class="stat-label">Cached</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="stat-size">0MB</span>
+      <span class="stat-label">Saved</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="stat-offline">0</span>
+      <span class="stat-label">Offline</span>
+    </div>
+  </div>
+
+  <!-- Archives -->
+  <div class="archives-header">
+    <span class="archives-title">MY VAULT</span>
+    <button class="clear-btn" onclick="clearAll()">CLEAR ALL</button>
+  </div>
+
+  <input id="search-input" type="search" placeholder="🔍 Search archives..." oninput="filterArchives(this.value)" />
+
+  <div id="archives-list">
+    <div id="empty-state">
+      <div class="empty-icon">📦</div>
+      <div class="empty-title">Vault is empty</div>
+      <div class="empty-sub">Paste any URL above and hit SAVE.<br/>Access it forever — even offline.</div>
+    </div>
+  </div>
+</main>
+
+<!-- Settings View -->
+<div id="settings-view" style="padding:24px 16px 120px">
+  <div class="section-label" style="margin-bottom:16px">⚙️ Settings</div>
+
+  <div class="settings-section">
+    <div class="settings-item">
+      <div>
+        <div class="settings-label">Auto-Sync on Wi-Fi</div>
+        <div class="settings-sub">Refresh cached pages automatically</div>
+      </div>
+      <div class="toggle" id="toggle-sync" onclick="toggleSetting('sync')"></div>
+    </div>
+    <div class="settings-item">
+      <div>
+        <div class="settings-label">Image Compression</div>
+        <div class="settings-sub">Save up to 60% storage space</div>
+      </div>
+      <div class="toggle on" id="toggle-compress" onclick="toggleSetting('compress')"></div>
+    </div>
+    <div class="settings-item">
+      <div>
+        <div class="settings-label">Offline Mode Only</div>
+        <div class="settings-sub">Only show cached content</div>
+      </div>
+      <div class="toggle" id="toggle-offline" onclick="toggleSetting('offline')"></div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-item">
+      <div>
+        <div class="settings-label">Storage Used</div>
+        <div class="settings-sub" id="storage-info">Calculating...</div>
+      </div>
+    </div>
+    <div class="settings-item" style="cursor:pointer" onclick="clearAll()">
+      <div>
+        <div class="settings-label" style="color:var(--red)">Clear All Data</div>
+        <div class="settings-sub">Remove all cached pages</div>
+      </div>
+      <span style="color:var(--red);font-size:18px">›</span>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:32px">
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim)">DATAVAULT v1.0.0</div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);margin-top:4px;opacity:0.5">Offline-First Personal Archive</div>
+  </div>
+</div>
+
+<!-- Detail View -->
+<div id="detail-view">
+  <div class="detail-header">
+    <button class="back-btn" onclick="closeDetail()">←</button>
+    <div class="detail-title" id="detail-title">Archive</div>
+  </div>
+  <div class="detail-body">
+    <div class="detail-url" id="detail-url"></div>
+    <div class="detail-content" id="detail-content"></div>
+    <div class="detail-actions">
+      <button class="detail-action primary" id="detail-open">🌐 OPEN LIVE</button>
+      <button class="detail-action secondary" onclick="deleteCurrentArchive()">🗑️ DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">HOME</span>
+  </button>
+  <button class="nav-item" id="nav-vault" onclick="switchTab('vault')">
+    <span class="nav-icon">📦</span>
+    <span class="nav-label">VAULT</span>
+  </button>
+  <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">SETTINGS</span>
+  </button>
+</nav>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+const STORAGE_KEY = 'datavault_archives';
+let archives = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let currentArchiveId = null;
+let deferredPrompt = null;
+let settings = JSON.parse(localStorage.getItem('datavault_settings') || '{"sync":false,"compress":true,"offline":false}');
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderArchives();
+  updateStats();
+  updateStorageInfo();
+  applySettings();
+  updateStatus();
+});
+
+window.addEventListener('online',  updateStatus);
+window.addEventListener('offline', updateStatus);
+
+// ── Status ────────────────────────────────────────────────────
+function updateStatus() {
+  const badge = document.getElementById('status-badge');
+  const text  = document.getElementById('status-text');
+  if (navigator.onLine) {
+    badge.className = 'online';
+    text.textContent = 'ONLINE';
+  } else {
+    badge.className = 'offline';
+    text.textContent = 'OFFLINE';
+  }
+}
+
+// ── Install ───────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-btn').style.display = 'block';
+});
+
+async function handleInstall() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-btn').style.display = 'none';
+  if (outcome === 'accepted') showToast('✅ DataVault installed!');
+}
+
+// ── URL Fetch ─────────────────────────────────────────────────
+function setUrl(url) {
+  document.getElementById('url-input').value = url;
+  document.getElementById('url-input').focus();
+}
+
+async function handleFetch() {
+  const input = document.getElementById('url-input');
+  const url   = input.value.trim();
+
+  if (!url) { showToast('⚠️ Please enter a URL', true); return; }
+
+  let finalUrl = url;
+  if (!url.startsWith('http')) finalUrl = 'https://' + url;
+
+  try { new URL(finalUrl); } catch {
+    showToast('⚠️ Invalid URL', true); return;
+  }
+
+  if (!navigator.onLine) {
+    showToast('📴 Go online to cache new pages', true); return;
+  }
+
+  // Check duplicate
+  if (archives.find(a => a.url === finalUrl)) {
+    showToast('📦 Already in vault!', true); return;
+  }
+
+  setFetchLoading(true);
+  showProgress('Connecting...', 10);
+
+  try {
+    // Try to fetch via CORS proxy for real content
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(finalUrl)}`;
+    showProgress('Downloading content...', 40);
+
+    const res  = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+    const data = await res.json();
+
+    showProgress('Extracting text...', 70);
+
+    const parser  = new DOMParser();
+    const doc     = parser.parseFromString(data.contents || '', 'text/html');
+
+    // Extract clean content
+    ['script','style','noscript','nav','footer','aside','header','iframe','ads'].forEach(tag => {
+      doc.querySelectorAll(tag).forEach(el => el.remove());
+    });
+
+    const title   = doc.title || extractDomain(finalUrl);
+    const content = (doc.body?.innerText || doc.body?.textContent || '').replace(/\s+/g, ' ').trim();
+    const words   = content.split(' ').slice(0, 2000).join(' ');
+
+    showProgress('Saving to vault...', 90);
+
+    const archive = {
+      id:        Date.now().toString(),
+      url:       finalUrl,
+      title:     title.slice(0, 100) || extractDomain(finalUrl),
+      content:   words,
+      size:      new Blob([words]).size,
+      cachedAt:  new Date().toISOString(),
+      status:    'ready',
+      tags:      guessTags(finalUrl, content)
+    };
+
+    archives.unshift(archive);
+    saveArchives();
+    renderArchives();
+    updateStats();
+    showProgress('Done!', 100);
+
+    setTimeout(() => {
+      setFetchLoading(false);
+      input.value = '';
+      showToast(`✅ "${title.slice(0,30)}..." saved!`);
+    }, 500);
+
+  } catch (err) {
+    // Fallback — save URL metadata only
+    const archive = {
+      id:        Date.now().toString(),
+      url:       finalUrl,
+      title:     extractDomain(finalUrl),
+      content:   `[Saved from: ${finalUrl}]\n\nContent could not be fully extracted. Open the live URL to read.`,
+      size:      100,
+      cachedAt:  new Date().toISOString(),
+      status:    'partial',
+      tags:      guessTags(finalUrl, '')
+    };
+
+    archives.unshift(archive);
+    saveArchives();
+    renderArchives();
+    updateStats();
+    setFetchLoading(false);
+    input.value = '';
+    showToast(`📌 URL saved (partial)`, false);
+  }
+}
+
+function setFetchLoading(loading) {
+  const btn = document.getElementById('fetch-btn');
+  const wrap = document.getElementById('progress-wrap');
+  if (loading) {
+    btn.innerHTML = '<span class="spinner"></span>SAVING';
+    btn.classList.add('loading');
+    btn.disabled = true;
+    wrap.classList.add('show');
+  } else {
+    btn.innerHTML = 'SAVE';
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    setTimeout(() => wrap.classList.remove('show'), 800);
+  }
+}
+
+function showProgress(text, pct) {
+  document.getElementById('progress-text').textContent = text;
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+// ── Render Archives ───────────────────────────────────────────
+function renderArchives(filter = '') {
+  const list    = document.getElementById('archives-list');
+  const empty   = document.getElementById('empty-state');
+  const filtered = archives.filter(a =>
+    !filter ||
+    a.title.toLowerCase().includes(filter.toLowerCase()) ||
+    a.url.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(empty || createEmptyState());
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+
+  list.innerHTML = filtered.map(a => `
+    <div class="archive-card" onclick="openDetail('${a.id}')">
+      <div class="archive-card-top">
+        <div class="archive-title">${escHtml(a.title)}</div>
+        <div class="archive-status ${a.status === 'ready' ? 'status-ready' : a.status === 'partial' ? 'status-pending' : 'status-failed'}">
+          ${a.status === 'ready' ? '✓ CACHED' : a.status === 'partial' ? '~ PARTIAL' : '✗ FAILED'}
+        </div>
+      </div>
+      <div class="archive-url">${escHtml(a.url)}</div>
+      <div class="archive-meta">
+        <div class="archive-tags">
+          ${a.tags.slice(0,2).map(t => `<span class="tag">${t}</span>`).join('')}
+        </div>
+        <div class="archive-time">${timeAgo(a.cachedAt)}</div>
+      </div>
+      <div class="archive-actions" onclick="event.stopPropagation()">
+        <div class="action-btn primary" onclick="openDetail('${a.id}')">📖 READ</div>
+        <div class="action-btn" onclick="window.open('${escHtml(a.url)}','_blank')">🌐 LIVE</div>
+        <div class="action-btn danger" onclick="deleteArchive('${a.id}')">🗑️</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterArchives(val) { renderArchives(val); }
+
+// ── Detail ────────────────────────────────────────────────────
+function openDetail(id) {
+  const a = archives.find(x => x.id === id);
+  if (!a) return;
+  currentArchiveId = id;
+
+  document.getElementById('detail-title').textContent   = a.title;
+  document.getElementById('detail-url').textContent     = a.url;
+  document.getElementById('detail-content').textContent = a.content;
+  document.getElementById('detail-open').onclick = () => window.open(a.url, '_blank');
+  document.getElementById('detail-view').classList.add('show');
+}
+
+function closeDetail() {
+  document.getElementById('detail-view').classList.remove('show');
+  currentArchiveId = null;
+}
+
+function deleteCurrentArchive() {
+  if (currentArchiveId) {
+    deleteArchive(currentArchiveId);
+    closeDetail();
+  }
+}
+
+function deleteArchive(id) {
+  archives = archives.filter(a => a.id !== id);
+  saveArchives();
+  renderArchives();
+  updateStats();
+  showToast('🗑️ Deleted');
+}
+
+function clearAll() {
+  if (archives.length === 0) return;
+  if (!confirm('Clear all cached pages?')) return;
+  archives = [];
+  saveArchives();
+  renderArchives();
+  updateStats();
+  showToast('🗑️ Vault cleared');
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-count').textContent   = archives.length;
+  const totalMB = (archives.reduce((s,a) => s + (a.size||0), 0) / 1048576).toFixed(1);
+  document.getElementById('stat-size').textContent    = totalMB + 'MB';
+  document.getElementById('stat-offline').textContent = archives.filter(a => a.status === 'ready').length;
+}
+
+// ── Settings ──────────────────────────────────────────────────
+function toggleSetting(key) {
+  settings[key] = !settings[key];
+  localStorage.setItem('datavault_settings', JSON.stringify(settings));
+  applySettings();
+}
+
+function applySettings() {
+  ['sync','compress','offline'].forEach(key => {
+    const el = document.getElementById('toggle-' + key);
+    if (el) el.className = 'toggle' + (settings[key] ? ' on' : '');
+  });
+}
+
+function updateStorageInfo() {
+  if ('storage' in navigator && 'estimate' in navigator.storage) {
+    navigator.storage.estimate().then(({ usage, quota }) => {
+      const used  = (usage  / 1048576).toFixed(1);
+      const total = (quota  / 1048576).toFixed(0);
+      document.getElementById('storage-info').textContent = `${used}MB used of ${total}MB`;
+    });
+  } else {
+    document.getElementById('storage-info').textContent = 'Storage info unavailable';
+  }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('main-view').style.display     = tab === 'home' || tab === 'vault' ? 'block' : 'none';
+  document.getElementById('settings-view').classList.toggle('show', tab === 'settings');
+
+  if (tab === 'vault') {
+    document.getElementById('search-input').focus();
+  }
+
+  ['home','vault','settings'].forEach(t => {
+    document.getElementById('nav-' + t).classList.toggle('active', t === tab);
+  });
+
+  if (tab === 'settings') updateStorageInfo();
+}
+
+// ── Storage ───────────────────────────────────────────────────
+function saveArchives() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(archives));
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function extractDomain(url) {
+  try { return new URL(url).hostname.replace('www.',''); } catch { return url; }
+}
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+function guessTags(url, content) {
+  const tags = [];
+  const u = url.toLowerCase();
+  const c = content.toLowerCase();
+  if (u.includes('wikipedia')) tags.push('wiki');
+  if (u.includes('medium') || u.includes('blog')) tags.push('article');
+  if (u.includes('github')) tags.push('code');
+  if (u.includes('youtube')) tags.push('video');
+  if (u.includes('arxiv') || c.includes('abstract')) tags.push('research');
+  if (u.includes('doc') || u.includes('mdn')) tags.push('docs');
+  if (tags.length === 0) tags.push('web');
+  return tags;
+}
+
+// ── Service Worker ────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+    .then(r => console.log('[DataVault] SW registered:', r.scope))
+    .catch(e => console.error('[DataVault] SW failed:', e));
+}
+</script>
+</body>
+</html>
